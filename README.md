@@ -2,7 +2,7 @@
 A python application used for downloading YouTube playlists and videos.
 
 # How to use ?
-1- Open a terminal window
+1- Open a terminal window__
 2- Program arguments:
   . Download type:
     * "-p": for a playlist
