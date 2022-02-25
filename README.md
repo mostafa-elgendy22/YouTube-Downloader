@@ -4,7 +4,7 @@ A python application used for downloading YouTube playlists and videos.
 # How to use ?
 1- Open a terminal window<br />
 2- Program arguments:<br />
-  . Download type:<br />
+&nbsp;&nbsp;. Download type:<br />
     * "-p": for a playlist<br />
     * "-v": for a video<br />
   . Playlist / video URL<br />
