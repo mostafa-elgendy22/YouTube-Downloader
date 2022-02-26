@@ -19,4 +19,4 @@ A python application used for downloading YouTube playlists and videos.
 
 # Example commands:
 .\youtube_downloader.exe -p https://www.youtube.com/playlist?list=PL2jrku-ebl3H50FiEPr4erSJiJHURM9BX 1 -1 -r "..\..\Courses\Cryptography"&nbsp;&nbsp;(Download the full playlist)<br /><br />
-.\youtube_downloader.exe v https://www.youtube.com/watch?v=2aHkqB2-46k&list=PL2jrku-ebl3H50FiEPr4erSJiJHURM9BX&index=1 -r "..\..\Courses\Cryptography"&nbsp;&nbsp;(Download the video)<br />
+.\youtube_downloader.exe -v https://www.youtube.com/watch?v=2aHkqB2-46k&list=PL2jrku-ebl3H50FiEPr4erSJiJHURM9BX&index=1 -r "..\..\Courses\Cryptography"&nbsp;&nbsp;(Download the video)<br />
