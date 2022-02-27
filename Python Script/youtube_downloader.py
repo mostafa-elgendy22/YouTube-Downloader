@@ -39,10 +39,6 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         print("\nConnection error.\n")
         sys.exit(0)
 
-    except:
-        print("\nUnkown exception.\n")
-        sys.exit(0)
-
 
 def create_download_path(type, path):
     if type == "-r":
