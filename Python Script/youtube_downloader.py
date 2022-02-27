@@ -35,11 +35,13 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         print("\nInvalid video URL.\n") 
         sys.exit(0)
     
-    except URLError:
+    except (URLError, ConnectionResetError):
         print("\nConnection error.\n")
         sys.exit(0)
 
-
+    except:
+        print("\nUnkown exception.\n")
+        sys.exit(0)
 
 
 def create_download_path(type, path):
@@ -114,7 +116,7 @@ def main():
             sys.exit(0)
         
         except URLError:
-            print("\Connection error.\n")
+            print("\nConnection error.\n")
             sys.exit(0)
 
     else: 
