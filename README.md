@@ -17,7 +17,7 @@ A python application used for downloading YouTube playlists and videos.
 5. Download path directory: The path of the directory that you want to download the videos to (if you choose "-c" in the previous argument then leave this field empty) 
 
 # Example commands:
-* Download the full playlist
+* Download the full playlist <br />
 `
 python youtube_downloader.py -p "https://www.youtube.com/playlist?list=PL2jrku-ebl3H50FiEPr4erSJiJHURM9BX" 1 -1 -r "..\..\Courses\Cryptography"
 `
