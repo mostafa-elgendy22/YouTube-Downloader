@@ -32,7 +32,8 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         print("\nSuccessful download.")
 
     except exceptions.RegexMatchError:
-        print("\nInvalid video URL.\n") 
+        print("\nInvalid video URL.\n")
+        print("\nThis thread might solve your problem: https://stackoverflow.com/questions/70776558/pytube-exceptions-regexmatcherror-init-could-not-find-match-for-w-w .\n")
         sys.exit(0)
     
     except (URLError, ConnectionResetError):
