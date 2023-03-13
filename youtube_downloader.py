@@ -12,10 +12,12 @@ def SIGINT_handler(sig, frame):
     print('\nThe application is interrupted.\n')
     sys.exit(0)
 
-def download_video(video_URL, download_path, i = None, end_index = None):
+def download_video(video_URL, download_path, i = None, end_index = None, resolution = None):
     try:
         video = YouTube(video_URL, on_progress_callback = on_progress)
-        stream = video.streams.filter(progressive = True, file_extension = "mp4").last()
+        if sys.argv[1] == "-v":
+            resolution = select_resolution(video.streams.filter(progressive = True), video.title)
+        stream = video.streams.filter(progressive = True, file_extension = "mp4").get_by_resolution(resolution)
         if stream.filesize >= (2 ** 30): 
             file_size = float("{:.2f}".format(stream.filesize / (2 ** 30)))
             size_unit = "GB"
@@ -39,6 +41,33 @@ def download_video(video_URL, download_path, i = None, end_index = None):
     except (URLError, ConnectionResetError):
         print("\nConnection error.\n")
         sys.exit(0)
+
+def select_resolution(streams, title):
+    resolutions = []
+    for stream in streams:
+        if stream.mime_type == "video/mp4" and stream.resolution not in resolutions:
+            resolutions.append(stream.resolution)
+    print(f"\nAvailable resolutions for '{title}':")
+    for i in range(len(resolutions)):
+        print(f"{i + 1}. {resolutions[i]}")
+    choice = int(input(f"Choose a resolution: "))
+    return resolutions[choice - 1]
+
+def find_resolutions(video_URLs):
+    resolutions = {}
+    for video_URL in video_URLs:
+        video = YouTube(video_URL)
+        for stream in video.streams.filter(progressive = True):
+            if stream.mime_type == "video/mp4" and stream.resolution not in resolutions:
+                resolutions[stream.resolution] = 1
+            elif stream.mime_type == "video/mp4" and stream.resolution in resolutions:
+                resolutions[stream.resolution] += 1
+        
+    # remove resolutions that are not available in all videos
+    for resolution in list(resolutions):
+        if resolutions[resolution] != len(video_URLs):
+            del resolutions[resolution]
+    return list(resolutions)
 
 
 def create_download_path(type, path):
@@ -104,8 +133,18 @@ def main():
                 print("\nInvalid value for start index, start index shouldn't be greater than end index.\n")
                 sys.exit(0)
             print("\nPlease wait...")
-            for i in range(start_index, end_index + 1):
-                download_video(video_URLs[i - 1], download_path, i, end_index)
+            video_URLs = video_URLs[start_index - 1:end_index]
+            
+            resolutions = find_resolutions(video_URLs)
+            print(f"\nAvailable resolutions for the playlist:")
+            for i in range(len(resolutions)):
+                print(f"{i + 1}. {resolutions[i]}")
+            
+            choice = int(input(f"Choose a resolution: "))
+            resolution = resolutions[choice - 1]
+            
+            for i in range(len(video_URLs)):
+                download_video(video_URLs[i], download_path, start_index + i, end_index, resolution)
             print("\nThe playlist was downloaded successfully.\n")
 
         except (ValueError, KeyError):
