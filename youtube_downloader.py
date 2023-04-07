@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 import sys
 import signal
 import os.path
@@ -42,8 +41,14 @@ def download_video(video_URL, download_path, i = None, end_index = None, resolut
         print("\nConnection error.\n")
         sys.exit(0)
 
+    except Exception as e:
+        print("\nAn error has occurred.")
+        print(f"Error message: {e}\n")
+        sys.exit(0)
+
 def select_resolution(streams, title):
     resolutions = []
+    print("\nFinding available resolutions...")
     for stream in streams:
         if stream.mime_type == "video/mp4" and stream.resolution not in resolutions:
             resolutions.append(stream.resolution)
@@ -54,20 +59,31 @@ def select_resolution(streams, title):
     return resolutions[choice - 1]
 
 def find_resolutions(video_URLs):
-    resolutions = {}
-    for video_URL in video_URLs:
-        video = YouTube(video_URL)
-        for stream in video.streams.filter(progressive = True):
-            if stream.mime_type == "video/mp4" and stream.resolution not in resolutions:
-                resolutions[stream.resolution] = 1
-            elif stream.mime_type == "video/mp4" and stream.resolution in resolutions:
-                resolutions[stream.resolution] += 1
-        
-    # remove resolutions that are not available in all videos
-    for resolution in list(resolutions):
-        if resolutions[resolution] != len(video_URLs):
-            del resolutions[resolution]
-    return list(resolutions)
+    try:
+        print("\nFinding available resolutions...")
+        resolutions = {}
+        for video_URL in video_URLs:
+            video = YouTube(video_URL)
+            for stream in video.streams.filter(progressive = True):
+                if stream.mime_type == "video/mp4" and stream.resolution not in resolutions:
+                    resolutions[stream.resolution] = 1
+                elif stream.mime_type == "video/mp4" and stream.resolution in resolutions:
+                    resolutions[stream.resolution] += 1
+            
+        # remove resolutions that are not available in all videos
+        for resolution in list(resolutions):
+            if resolutions[resolution] != len(video_URLs):
+                del resolutions[resolution]
+        return list(resolutions)
+    
+    except (URLError, ConnectionResetError):
+        print("\nConnection error.\n")
+        sys.exit(0)
+
+    except Exception as e:
+        print("\nAn error has occurred.\n")
+        print(e)
+        sys.exit(0)
 
 
 def create_download_path(type, path):
@@ -134,19 +150,7 @@ def main():
                 sys.exit(0)
             print("\nPlease wait...")
             video_URLs = video_URLs[start_index - 1:end_index]
-            
-            resolutions = find_resolutions(video_URLs)
-            print(f"\nAvailable resolutions for the playlist:")
-            for i in range(len(resolutions)):
-                print(f"{i + 1}. {resolutions[i]}")
-            
-            choice = int(input(f"Choose a resolution: "))
-            resolution = resolutions[choice - 1]
-            
-            for i in range(len(video_URLs)):
-                download_video(video_URLs[i], download_path, start_index + i, end_index, resolution)
-            print("\nThe playlist was downloaded successfully.\n")
-
+        
         except (ValueError, KeyError):
             print("\nInvalid playlist URL.\n")
             sys.exit(0)
@@ -154,6 +158,18 @@ def main():
         except URLError:
             print("\nConnection error.\n")
             sys.exit(0)
+
+        resolutions = find_resolutions(video_URLs)
+        print(f"\nAvailable resolutions for the playlist:")
+        for i in range(len(resolutions)):
+            print(f"{i + 1}. {resolutions[i]}")
+        
+        choice = int(input(f"Choose a resolution: "))
+        resolution = resolutions[choice - 1]
+        
+        for i in range(len(video_URLs)):
+            download_video(video_URLs[i], download_path, start_index + i, end_index, resolution)
+        print("\nThe playlist was downloaded successfully.\n")
 
     else: 
         print("\nYoutube Downloader")
