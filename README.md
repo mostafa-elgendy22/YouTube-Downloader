@@ -2,6 +2,8 @@
 
 A python application used for downloading YouTube playlists and videos.
 
+## Pre-requisites
+Run the following command: `pip install pytubefix`
 
 ## Program arguments:
 

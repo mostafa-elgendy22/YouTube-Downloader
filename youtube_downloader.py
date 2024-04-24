@@ -2,10 +2,10 @@ import sys
 import signal
 import os.path
 from urllib.error import URLError
-from pytube import Playlist
-from pytube import YouTube
-from pytube import exceptions
-from pytube.cli import on_progress
+from pytubefix import Playlist
+from pytubefix import YouTube
+from pytubefix import exceptions
+from pytubefix.cli import on_progress
 
 
 def SIGINT_handler(sig, frame):
