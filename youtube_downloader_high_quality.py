@@ -6,31 +6,62 @@ from pytubefix import Playlist
 from pytubefix import YouTube
 from pytubefix import exceptions
 from pytubefix.cli import on_progress
+import subprocess
 
 
 def SIGINT_handler(sig, frame):
     print('\nThe application is interrupted.\n')
     sys.exit(0)
-
+    
 
 def download_video(video_URL, download_path, i = None, end_index = None):
     try:
-        video = YouTube(video_URL, on_progress_callback = on_progress, use_oauth=True, allow_oauth_cache=True)
-        stream = video.streams.filter(progressive = True, file_extension = "mp4").last()
-        if stream.filesize >= (2 ** 30): 
-            file_size = float("{:.2f}".format(stream.filesize / (2 ** 30)))
+        video = YouTube(video_URL, on_progress_callback=on_progress, use_oauth=True, allow_oauth_cache=True)
+        video_stream = video.streams.filter(adaptive=True).filter(mime_type='video/webm').first()
+
+        if video_stream.filesize >= (2 ** 30): 
+            file_size = float("{:.2f}".format(video_stream.filesize / (2 ** 30)))
             size_unit = "GB"
         else:
-            file_size = float("{:.2f}".format(stream.filesize / (2 ** 20)))
+            file_size = float("{:.2f}".format(video_stream.filesize / (2 ** 20)))
             size_unit = "MB"
 
         if sys.argv[1] == "-p":
-            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [{stream.resolution}]")
+            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [{video_stream.resolution}]")
         else:
-            print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [{stream.resolution}]")
+            print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [{video_stream.resolution}]")
 
-        stream.download(download_path) 
+        video_stream.download(download_path) 
         print("\nSuccessful download.")
+        
+        ##########################################################################################
+        audio_stream = video.streams.filter(adaptive=True).filter(mime_type='audio/webm').first()
+        if audio_stream.filesize >= (2 ** 30): 
+            file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 30)))
+            size_unit = "GB"
+        else:
+            file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 20)))
+            size_unit = "MB"
+        
+        if sys.argv[1] == "-p":
+            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [{audio_stream.resolution}]")
+        else:
+            print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [AUDIO]")
+
+        audio_stream.download(download_path) 
+        print("\nSuccessful download.")
+
+        print("\nMerging video and audio...")
+        if not download_path:
+            download_path = ""
+        subprocess.run([
+            "ffmpeg", "-i", download_path + video.title + ".webm", "-i", download_path + video.title + ".m4a",
+            "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", download_path + video.title + ".mp4",
+            "-y"  # Overwrite without asking
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        os.remove(download_path + video.title + ".webm")
+        os.remove(download_path + video.title + ".m4a")
+
 
     except exceptions.RegexMatchError:
         print("\nInvalid video URL.\n")
@@ -40,6 +71,9 @@ def download_video(video_URL, download_path, i = None, end_index = None):
     except (URLError, ConnectionResetError):
         print("\nConnection error.\n")
         sys.exit(0)
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def create_download_path(type, path):
@@ -118,7 +152,7 @@ def main():
             print("\nConnection error.\n")
             sys.exit(0)
 
-    else: 
+    else:
         print("\nYoutube Downloader")
         print("\nPlease wait...")
         download_video(video_URL, download_path)

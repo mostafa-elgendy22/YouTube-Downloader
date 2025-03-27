@@ -1,9 +1,11 @@
 # YouTube-Downloader
 
-A python application used for downloading YouTube playlists and videos.
+A python application used for downloading YouTube playlists and videos. The application has two main files, one of them downloads average quality videos using progressive download and the other one downloads high quality videos using adaptive streaming and use ffmpeg to merge the video and audio files.
 
 ## Pre-requisites
 Run the following command: `pip install pytubefix`
+
+Install ffmpeg on your system and add it to the PATH environment variable. You can download ffmpeg from [here](https://ffmpeg.org/download.html) (if you want high quality videos).
 
 ## Program arguments:
 
