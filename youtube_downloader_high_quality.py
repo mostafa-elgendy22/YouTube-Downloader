@@ -52,6 +52,16 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         print("\nSuccessful download.")
 
         print("\nMerging video and audio...")
+        video.title = video.title.replace("/", "")
+        video.title = video.title.replace(":", "")
+        video.title = video.title.replace("?", "")
+        video.title = video.title.replace("*", "")
+        video.title = video.title.replace("<", "")
+        video.title = video.title.replace(">", "")
+        video.title = video.title.replace("|", "")
+        video.title = video.title.replace("\\", "")
+        video.title = video.title.replace("\"", "")
+        video.title = video.title.replace("'", "")
         if not download_path:
             download_path = ""
         subprocess.run([
@@ -61,6 +71,7 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         os.remove(download_path + video.title + ".webm")
         os.remove(download_path + video.title + ".m4a")
+        print("\nSuccessful merge.")
 
 
     except exceptions.RegexMatchError:
@@ -81,7 +92,7 @@ def create_download_path(type, path):
         file_dir = os.path.dirname(os.path.realpath('__file__'))
         download_path = os.path.join(file_dir, path)
     elif type == "-a":
-        download_path = path
+        download_path = path + "\\"
     else:
         download_path = None 
     return download_path
