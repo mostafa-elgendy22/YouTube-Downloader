@@ -17,7 +17,7 @@ def SIGINT_handler(sig, frame):
 def download_video(video_URL, download_path, i = None, end_index = None):
     try:
         video = YouTube(video_URL, on_progress_callback=on_progress, use_oauth=True, allow_oauth_cache=True)
-        video_stream = video.streams.filter(adaptive=True).filter(mime_type='video/webm').first()
+        video_stream = video.streams.filter(adaptive=True).filter(adaptive=True, only_video=True, file_extension='mp4').order_by('resolution').desc().first()
 
         if video_stream.filesize >= (2 ** 30): 
             file_size = float("{:.2f}".format(video_stream.filesize / (2 ** 30)))
@@ -31,11 +31,11 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         else:
             print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [{video_stream.resolution}]")
 
-        video_stream.download(download_path) 
+        video_stream.download(download_path, filename="video.mp4") 
         print("\nSuccessful download.")
         
         ##########################################################################################
-        audio_stream = video.streams.filter(adaptive=True).filter(mime_type='audio/webm').first()
+        audio_stream = video.streams.filter(adaptive=True, only_audio=True, file_extension='mp4').first()
         if audio_stream.filesize >= (2 ** 30): 
             file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 30)))
             size_unit = "GB"
@@ -44,11 +44,11 @@ def download_video(video_URL, download_path, i = None, end_index = None):
             size_unit = "MB"
         
         if sys.argv[1] == "-p":
-            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [{audio_stream.resolution}]")
+            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [AUDIO]")
         else:
             print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [AUDIO]")
 
-        audio_stream.download(download_path) 
+        audio_stream.download(download_path, filename="audio.mp4") 
         print("\nSuccessful download.")
 
         print("\nMerging video and audio...")
@@ -61,16 +61,14 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         video.title = video.title.replace("|", "")
         video.title = video.title.replace("\\", "")
         video.title = video.title.replace("\"", "")
-        video.title = video.title.replace("'", "")
         if not download_path:
             download_path = ""
         subprocess.run([
-            "ffmpeg", "-i", download_path + video.title + ".webm", "-i", download_path + video.title + ".m4a",
-            "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", download_path + video.title + ".mp4",
-            "-y"  # Overwrite without asking
+            "ffmpeg", "-i", download_path + "video.mp4", "-i", download_path + "audio.mp4",
+            "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", download_path + video.title + ".mp4"
         ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        os.remove(download_path + video.title + ".webm")
-        os.remove(download_path + video.title + ".m4a")
+        os.remove(download_path + "video.mp4")
+        os.remove(download_path + "audio.mp4")
         print("\nSuccessful merge.")
 
 
