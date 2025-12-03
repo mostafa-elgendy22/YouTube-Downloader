@@ -16,7 +16,8 @@ def SIGINT_handler(sig, frame):
 
 def download_video(video_URL, download_path, i = None, end_index = None):
     try:
-        video = YouTube(video_URL, on_progress_callback=on_progress, use_oauth=True, allow_oauth_cache=True)
+        video = YouTube(video_URL, on_progress_callback=on_progress)
+        video.title = f"({i}) {video.title}" if i is not None else video.title
         video_stream = video.streams.filter(adaptive=True).filter(adaptive=True, only_video=True, file_extension='mp4').order_by('resolution').desc().first()
 
         if video_stream.filesize >= (2 ** 30): 
@@ -35,7 +36,7 @@ def download_video(video_URL, download_path, i = None, end_index = None):
         print("\nSuccessful download.")
         
         ##########################################################################################
-        audio_stream = video.streams.filter(adaptive=True, only_audio=True, file_extension='mp4').first()
+        audio_stream = video.streams.filter(adaptive=True, only_audio=True, file_extension='mp4').order_by('abr').desc().first()
         if audio_stream.filesize >= (2 ** 30): 
             file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 30)))
             size_unit = "GB"
