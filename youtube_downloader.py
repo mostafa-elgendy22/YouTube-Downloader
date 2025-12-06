@@ -1,12 +1,12 @@
 import sys
 import signal
 import os.path
+import subprocess
 from urllib.error import URLError
 from pytubefix import Playlist
 from pytubefix import YouTube
 from pytubefix import exceptions
 from pytubefix.cli import on_progress
-import subprocess
 
 
 def SIGINT_handler(sig, frame):
@@ -14,76 +14,60 @@ def SIGINT_handler(sig, frame):
     sys.exit(0)
     
 
+def download_file(stream, download_path, file_name, i, end_index, title):
+    if stream.filesize >= (2 ** 30): 
+        file_size = float("{:.2f}".format(stream.filesize / (2 ** 30)))
+        size_unit = "GB"
+    else:
+        file_size = float("{:.2f}".format(stream.filesize / (2 ** 20)))
+        size_unit = "MB"
+
+    if stream.resolution is None:
+        stream.resolution = "AUDIO"
+    if i is not None:
+        print(f"\nDownloading {i} of {end_index}: '{title}' ({file_size} {size_unit}) [{stream.resolution}]")
+    else:
+        print(f"\nDownloading: '{title}' ({file_size} {size_unit}) [{stream.resolution}]")
+
+    stream.download(download_path, filename = file_name) 
+    print("\nSuccessful download.")
+    
+
+
 def download_video(video_URL, download_path, i = None, end_index = None):
     try:
         video = YouTube(video_URL, on_progress_callback=on_progress)
+        video.title = video.title.replace("/", "").replace(":", "").replace("?", "").replace("*", "").replace("<", "").replace(">", "").replace("|", "").replace("\\", "").replace("\"", "")
         video.title = f"({i}) {video.title}" if i is not None else video.title
         video_stream = video.streams.filter(adaptive=True).filter(adaptive=True, only_video=True, file_extension='mp4').order_by('resolution').desc().first()
-
-        if video_stream.filesize >= (2 ** 30): 
-            file_size = float("{:.2f}".format(video_stream.filesize / (2 ** 30)))
-            size_unit = "GB"
-        else:
-            file_size = float("{:.2f}".format(video_stream.filesize / (2 ** 20)))
-            size_unit = "MB"
-
-        if sys.argv[1] == "-p":
-            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [{video_stream.resolution}]")
-        else:
-            print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [{video_stream.resolution}]")
-
-        video_stream.download(download_path, filename="video.mp4") 
-        print("\nSuccessful download.")
-        
-        ##########################################################################################
         audio_stream = video.streams.filter(adaptive=True, only_audio=True, file_extension='mp4').order_by('abr').desc().first()
-        if audio_stream.filesize >= (2 ** 30): 
-            file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 30)))
-            size_unit = "GB"
-        else:
-            file_size = float("{:.2f}".format(audio_stream.filesize / (2 ** 20)))
-            size_unit = "MB"
-        
-        if sys.argv[1] == "-p":
-            print(f"\nDownloading {i} of {end_index}: '{video.title}' ({file_size} {size_unit}) [AUDIO]")
-        else:
-            print(f"\nDownloading: '{video.title}' ({file_size} {size_unit}) [AUDIO]")
-
-        audio_stream.download(download_path, filename="audio.mp4") 
-        print("\nSuccessful download.")
-
-        print("\nMerging video and audio...")
-        video.title = video.title.replace("/", "")
-        video.title = video.title.replace(":", "")
-        video.title = video.title.replace("?", "")
-        video.title = video.title.replace("*", "")
-        video.title = video.title.replace("<", "")
-        video.title = video.title.replace(">", "")
-        video.title = video.title.replace("|", "")
-        video.title = video.title.replace("\\", "")
-        video.title = video.title.replace("\"", "")
-        if not download_path:
-            download_path = ""
-        subprocess.run([
-            "ffmpeg", "-i", download_path + "video.mp4", "-i", download_path + "audio.mp4",
-            "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", download_path + video.title + ".mp4"
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        os.remove(download_path + "video.mp4")
-        os.remove(download_path + "audio.mp4")
-        print("\nSuccessful merge.")
-
+        download_file(video_stream, download_path, video.title + "_video.mp4", i, end_index, video.title)
+        download_file(audio_stream, download_path, video.title + "_audio.mp4", i, end_index, video.title)
+        return video
 
     except exceptions.RegexMatchError:
         print("\nInvalid video URL.\n")
         print("\nThis thread might solve your problem: https://stackoverflow.com/questions/70776558/pytube-exceptions-regexmatcherror-init-could-not-find-match-for-w-w .\n")
         sys.exit(0)
-    
     except (URLError, ConnectionResetError):
         print("\nConnection error.\n")
         sys.exit(0)
-
     except Exception as e:
         print(f"Error: {e}")
+
+
+def ffmpeg_merge(video, download_path):
+    print("\nMerging video and audio...")
+    if not download_path:
+        download_path = ""
+    video_path = download_path + video.title
+    subprocess.run([
+        "ffmpeg", "-i", video_path + "_video.mp4", "-i", video_path + "_audio.mp4",
+        "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", video_path + ".mp4"
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    os.remove(video_path + f"_video.mp4")
+    os.remove(video_path + f"_audio.mp4")
+    print("\nSuccessful merge.")
 
 
 def create_download_path(type, path):
@@ -151,7 +135,8 @@ def main():
                 sys.exit(0)
             print("\nPlease wait...")
             for i in range(start_index, end_index + 1):
-                download_video(video_URLs[i - 1], download_path, i, end_index)
+                video = download_video(video_URLs[i - 1], download_path, i, end_index)
+                ffmpeg_merge(video, download_path)
             print("\nThe playlist was downloaded successfully.\n")
 
         except (ValueError, KeyError):
@@ -165,7 +150,8 @@ def main():
     else:
         print("\nYoutube Downloader")
         print("\nPlease wait...")
-        download_video(video_URL, download_path)
+        video = download_video(video_URL, download_path)
+        ffmpeg_merge(video, download_path)
         print("\n")
 
 

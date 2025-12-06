@@ -5,7 +5,7 @@ A python application used for downloading YouTube playlists and videos. The appl
 ## Pre-requisites
 Run the following command: `pip install pytubefix`
 
-Install ffmpeg on your system and add it to the PATH environment variable. You can download ffmpeg from [here](https://ffmpeg.org/download.html) (if you want high quality videos).
+Install ffmpeg on your system and add it to the PATH environment variable. You can download ffmpeg from [here](https://ffmpeg.org/download.html).
 
 ## Program arguments:
 
